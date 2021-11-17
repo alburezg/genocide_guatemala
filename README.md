@@ -1,6 +1,6 @@
-Reproducible materials for paper
+Reproducible materials
 ================
-The Demographic Drivers of Grief and Memory after Genocide in Guatemala
+Diego Alburez-Gutierrez
 
   - [Structure of the data](#structure-of-the-data)
   - [Reproducing results from the
@@ -34,8 +34,8 @@ This document presents the code needed to reproduce the empirical
 analysis, figures, and tables presented in the paper:
 
 Alburez-Gutierrez, D. (accepted). *The demographic drivers of grief and
-memory after genocide in Guatemala.* Demography. Temporary
-[DOI:\[10.4054/MPIDR-WP-2021-003](DOI:%5B10.4054/MPIDR-WP-2021-003)\](<https://dx.doi.org/10.4054/MPIDR-WP-2021-003>).
+memory after genocide in Guatemala.* Demography. Temporary DOI:
+<https://dx.doi.org/10.4054/MPIDR-WP-2021-003>.
 
 The package `EGM` is needed to reproduce the results of this study. It
 can be downloaded from Github using the `devtools` package in R:
@@ -111,7 +111,7 @@ library(patchwork)
 
     ## Warning: package 'patchwork' was built under R version 4.0.4
 
-## Structure of the data
+# Structure of the data
 
 The microdata data from Rio Negro cannot be shared in full given privacy
 concerns. The raw data includes sensitive information such as date of
@@ -1005,355 +1005,6 @@ NA
 
 </table>
 
-The analysis below also uses data from secondary sources. This was used
-to check the quality of the demographic information collected using the
-EGM. The `individuals81` dataset records the 1978 census conducted by
-INDE power company in Rio Negro before the killings. (It is referred to
-as ‘81’ because the census report was published in 1981.)
-
-``` r
-EGM::individuals81 %>% head %>% kable
-```
-
-<table>
-
-<thead>
-
-<tr>
-
-<th style="text-align:right;">
-
-ind\_id
-
-</th>
-
-<th style="text-align:right;">
-
-sex
-
-</th>
-
-<th style="text-align:right;">
-
-age81
-
-</th>
-
-</tr>
-
-</thead>
-
-<tbody>
-
-<tr>
-
-<td style="text-align:right;">
-
-6
-
-</td>
-
-<td style="text-align:right;">
-
-1
-
-</td>
-
-<td style="text-align:right;">
-
-39
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:right;">
-
-7
-
-</td>
-
-<td style="text-align:right;">
-
-2
-
-</td>
-
-<td style="text-align:right;">
-
-37
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:right;">
-
-9
-
-</td>
-
-<td style="text-align:right;">
-
-2
-
-</td>
-
-<td style="text-align:right;">
-
-16
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:right;">
-
-10
-
-</td>
-
-<td style="text-align:right;">
-
-1
-
-</td>
-
-<td style="text-align:right;">
-
-7
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:right;">
-
-11
-
-</td>
-
-<td style="text-align:right;">
-
-2
-
-</td>
-
-<td style="text-align:right;">
-
-4
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:right;">
-
-12
-
-</td>
-
-<td style="text-align:right;">
-
-1
-
-</td>
-
-<td style="text-align:right;">
-
-1
-
-</td>
-
-</tr>
-
-</tbody>
-
-</table>
-
-The `individuals08` dataset records the 2008 local census conducted by
-COCAHICH in Rio Negro and Pacux.
-
-``` r
-EGM::individuals08 %>% head %>% kable
-```
-
-<table>
-
-<thead>
-
-<tr>
-
-<th style="text-align:right;">
-
-ind\_id
-
-</th>
-
-<th style="text-align:right;">
-
-sex
-
-</th>
-
-<th style="text-align:right;">
-
-age08
-
-</th>
-
-</tr>
-
-</thead>
-
-<tbody>
-
-<tr>
-
-<td style="text-align:right;">
-
-1
-
-</td>
-
-<td style="text-align:right;">
-
-1
-
-</td>
-
-<td style="text-align:right;">
-
-42.23014
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:right;">
-
-2
-
-</td>
-
-<td style="text-align:right;">
-
-2
-
-</td>
-
-<td style="text-align:right;">
-
-45.42740
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:right;">
-
-3
-
-</td>
-
-<td style="text-align:right;">
-
-1
-
-</td>
-
-<td style="text-align:right;">
-
-24.58630
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:right;">
-
-4
-
-</td>
-
-<td style="text-align:right;">
-
-1
-
-</td>
-
-<td style="text-align:right;">
-
-22.25753
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:right;">
-
-5
-
-</td>
-
-<td style="text-align:right;">
-
-2
-
-</td>
-
-<td style="text-align:right;">
-
-20.37260
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:right;">
-
-6
-
-</td>
-
-<td style="text-align:right;">
-
-2
-
-</td>
-
-<td style="text-align:right;">
-
-17.72877
-
-</td>
-
-</tr>
-
-</tbody>
-
-</table>
-
 # Reproducing results from the paper
 
 In what follows, I show how these datasets were analysed to produce the
@@ -1390,6 +1041,72 @@ cos_labs <- c(
 
 ``` r
 format_zero_table <- function(x) gsub("^0\\.", ".", x)
+
+census <- function(df, from, to = NA, subset_df = T, born_in_RN = F, born_bv = F,
+                   gen_age = T, women_only = F, men_only = F,
+                   by = 5, update_relatives = T, show_messages = F,
+                   subset_on_DoB = F, min_DoB, max_DoB) {
+  # If subset_df, it returns a DF with only the relevant cases
+  # Otherwise, it will create a column 'keep' to indicate which values should be kept.
+  if (is.na(to)) to <- from
+  # keep only cases where dates are known
+  # set DoD of alive people as 2010
+  if (from == to) df$census <- from
+  else df$census <- paste(from,to,sep = "-")
+  df$DoD_temp <- df$DoD
+  df$DoD_temp[df$alive == 1] <- 2100
+
+  if (born_in_RN) df <- dplyr::filter(df, origin_literal == 1)
+
+  if (born_bv) df <- dplyr::filter(df, origin_departamento == "baja verapaz")
+
+  if (women_only) df <- df %>% dplyr::filter(sex == 2)
+
+  if (men_only) df <- df %>% dplyr::filter(sex == 1)
+
+  if (subset_df) {
+    df <- df[!is.na(df$DoB) & !is.na(df$DoD_temp),]
+    DoD <- df$DoD_temp
+    df$DoD_temp <- NULL
+    DoB <- df$DoB
+    # keep only those alive in given interval
+    df <- df[DoB <= to & DoD >= from,]
+  }
+  else {
+    DoD <- df$DoD_temp
+    df$DoD_temp <- NULL
+    DoB <- df$DoB
+    df$keep <- NA
+    df$keep <- ifelse(DoB <= to & DoD >= from, T, F)
+  }
+  if(subset_on_DoB) {
+    # keep only those alive in given interval
+    df <- df %>%
+      dplyr::filter(DoB >= min_DoB & DoB <= max_DoB)
+  }
+  if (gen_age) {
+    df$age_at_census <- round(mean(c(to,from))) - df$DoB
+    df$age_gr_at_census <- age_group_custom(df$age_at_census, by = by, as_factor = T)
+  }
+  if (update_relatives) {
+    # keep original copy
+    df$children_original <- df$children
+    df$father_original <- df$father
+    df$mother_original <- df$mother
+    df$parents_original <- df$parents
+    df$cousins_original <- df$cousins
+    df$grandparents_original <- df$grandparents
+    df$granchildren_original <- df$grandchildren
+    df$spouses_original <- df$spouses
+    if (show_messages) {
+      print("Columns substituted for all relative types.")
+      print("Original values were saved in '[relative]_original' columns.")
+      print("For spouses: Alive during census and older than 14.")
+      print("For everyone else, alive during census.")
+    }
+  }
+  return(df)
+}
 ```
 
 ### Run analysis
@@ -2032,7 +1749,7 @@ combined <- p_s + p_a & theme(legend.position = "bottom", legend.key.width = uni
 combined + plot_layout(guides = "collect")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
 
 ## Figure 3
 
@@ -2253,7 +1970,7 @@ share_are_bereaved %>%
   theme_bw(base_size = 16)
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
 
 ## Figure 4
 
@@ -2474,13 +2191,13 @@ datapoly %>%
   )
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
 
 # Session information
 
 Report by Diego Alburez-Gutierrez - <https://twitter.com/d_alburez>
 
-    ## [1] "Report created: 2021-11-17 14:41:09"
+    ## [1] "Report created: 2021-11-17 14:48:13"
 
     ## R version 4.0.2 (2020-06-22)
     ## Platform: x86_64-w64-mingw32/x64 (64-bit)

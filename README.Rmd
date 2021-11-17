@@ -1,6 +1,6 @@
 ---
-title: "Reproducible materials for paper"
-author: "The Demographic Drivers of Grief and Memory after Genocide in Guatemala"
+title: "Reproducible materials"
+author: "Diego Alburez-Gutierrez"
 output:
   github_document:
     toc: true
@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 This document presents the code needed to reproduce the empirical analysis, figures, and tables presented in the paper:
 
-Alburez-Gutierrez, D. (accepted). *The demographic drivers of grief and memory after genocide in Guatemala.* Demography. Temporary DOI:[10.4054/MPIDR-WP-2021-003](https://dx.doi.org/10.4054/MPIDR-WP-2021-003).
+Alburez-Gutierrez, D. (accepted). *The demographic drivers of grief and memory after genocide in Guatemala.* Demography. Temporary DOI: https://dx.doi.org/10.4054/MPIDR-WP-2021-003.
 
 The package `EGM` is needed to reproduce the results of this study. It can be downloaded from Github using the `devtools` package in R:
 
@@ -40,7 +40,7 @@ library(patchwork)
 library(rionegro)
 ```
 
-## Structure of the data
+# Structure of the data
 
 The microdata data from Rio Negro cannot be shared in full given privacy concerns. The raw data includes sensitive information such as date of birth, date of death, and kinship ties, which could be used to uniquely identify members of the population. Nevertheless, this section provides a brief overview of the seven datasets referenced in the code below. Note that the datasets included in the EGM package are for illustrative purposes and only include the columns referenced in the analysis.
 
@@ -48,18 +48,6 @@ The `final` dataset records all members of the community, reconstructed using th
 
 ```{r}
 EGM::final %>% head %>% kable
-```
-
-The analysis below also uses data from secondary sources. This was used to check the quality of the demographic information collected using the EGM. The `individuals81` dataset records the 1978 census conducted by INDE power company in Rio Negro before the killings. (It is referred to as '81' because the census report was published in 1981.)
-
-```{r}
-EGM::individuals81 %>% head %>% kable
-```
-
-The `individuals08` dataset records the 2008 local census conducted by COCAHICH in Rio Negro and Pacux.
-
-```{r}
-EGM::individuals08 %>% head %>% kable
 ```
 
 # Reproducing results from the paper
@@ -94,6 +82,73 @@ cos_labs <- c(
 
 ```{r}
 format_zero_table <- function(x) gsub("^0\\.", ".", x)
+
+census <- function(df, from, to = NA, subset_df = T, born_in_RN = F, born_bv = F,
+                   gen_age = T, women_only = F, men_only = F,
+                   by = 5, update_relatives = T, show_messages = F,
+                   subset_on_DoB = F, min_DoB, max_DoB) {
+  # If subset_df, it returns a DF with only the relevant cases
+  # Otherwise, it will create a column 'keep' to indicate which values should be kept.
+  if (is.na(to)) to <- from
+  # keep only cases where dates are known
+  # set DoD of alive people as 2010
+  if (from == to) df$census <- from
+  else df$census <- paste(from,to,sep = "-")
+  df$DoD_temp <- df$DoD
+  df$DoD_temp[df$alive == 1] <- 2100
+
+  if (born_in_RN) df <- dplyr::filter(df, origin_literal == 1)
+
+  if (born_bv) df <- dplyr::filter(df, origin_departamento == "baja verapaz")
+
+  if (women_only) df <- df %>% dplyr::filter(sex == 2)
+
+  if (men_only) df <- df %>% dplyr::filter(sex == 1)
+
+  if (subset_df) {
+    df <- df[!is.na(df$DoB) & !is.na(df$DoD_temp),]
+    DoD <- df$DoD_temp
+    df$DoD_temp <- NULL
+    DoB <- df$DoB
+    # keep only those alive in given interval
+    df <- df[DoB <= to & DoD >= from,]
+  }
+  else {
+    DoD <- df$DoD_temp
+    df$DoD_temp <- NULL
+    DoB <- df$DoB
+    df$keep <- NA
+    df$keep <- ifelse(DoB <= to & DoD >= from, T, F)
+  }
+  if(subset_on_DoB) {
+    # keep only those alive in given interval
+    df <- df %>%
+      dplyr::filter(DoB >= min_DoB & DoB <= max_DoB)
+  }
+  if (gen_age) {
+    df$age_at_census <- round(mean(c(to,from))) - df$DoB
+    df$age_gr_at_census <- age_group_custom(df$age_at_census, by = by, as_factor = T)
+  }
+  if (update_relatives) {
+    # keep original copy
+    df$children_original <- df$children
+    df$father_original <- df$father
+    df$mother_original <- df$mother
+    df$parents_original <- df$parents
+    df$cousins_original <- df$cousins
+    df$grandparents_original <- df$grandparents
+    df$granchildren_original <- df$grandchildren
+    df$spouses_original <- df$spouses
+    if (show_messages) {
+      print("Columns substituted for all relative types.")
+      print("Original values were saved in '[relative]_original' columns.")
+      print("For spouses: Alive during census and older than 14.")
+      print("For everyone else, alive during census.")
+    }
+  }
+  return(df)
+}
+
 ```
 
 ### Run analysis
