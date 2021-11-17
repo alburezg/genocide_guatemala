@@ -1,1370 +1,72 @@
-Reproducible materials for paper
-================
-The Demographic Drivers of Grief and Memory after Genocide in Guatemala
+---
+title: "Reproducible materials for paper"
+author: "The Demographic Drivers of Grief and Memory after Genocide in Guatemala"
+output:
+  github_document:
+    toc: true
+---
 
-  - [Structure of the data](#structure-of-the-data)
-  - [Reproducing results from the
-    paper](#reproducing-results-from-the-paper)
-      - [Table 1](#table-1)
-          - [Define parameters](#define-parameters)
-          - [Define functions](#define-functions)
-          - [Run analysis](#run-analysis)
-      - [Table 2](#table-2)
-          - [Define parameters](#define-parameters-1)
-          - [Define functions](#define-functions-1)
-          - [Run analysis](#run-analysis-1)
-      - [Table 3](#table-3)
-          - [Define parameters](#define-parameters-2)
-      - [Run analysis](#run-analysis-2)
-      - [Figure 1](#figure-1)
-          - [Define parameters](#define-parameters-3)
-          - [Define functions](#define-functions-2)
-          - [Run analysis](#run-analysis-3)
-      - [Figure 3](#figure-3)
-          - [Define parameters](#define-parameters-4)
-          - [Define functions](#define-functions-3)
-          - [Run analysis](#run-analysis-4)
-      - [Figure 4](#figure-4)
-          - [Define parameters](#define-parameters-5)
-          - [Define functions:](#define-functions-4)
-          - [Run analysis](#run-analysis-5)
-  - [Session information](#session-information)
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
 
-This document presents the code needed to reproduce the empirical
-analysis, figures, and tables presented in the paper [“The Demographic
-Drivers of Grief and Memory after Genocide in
-Guatemala”](https://dx.doi.org/10.4054/MPIDR-WP-2021-003) using the
-data collected in Rio Negro. The package `EGM` is needed to reproduce
-the results of this study. It can be downloaded from Github using the
-`devtools` package in R:
+This document presents the code needed to reproduce the empirical analysis, figures, and tables presented in the paper ["The Demographic Drivers of Grief and Memory after Genocide in Guatemala"](https://dx.doi.org/10.4054/MPIDR-WP-2021-003) using the data collected in Rio Negro. The package `EGM` is needed to reproduce the results of this study. It can be downloaded from Github using the `devtools` package in R:
 
-``` r
+```{r, eval = FALSE}
   library(devtools)
   install_github("alburezg/EGM", dep = FALSE)
 ```
 
-After installation, the package can be loaded, together with the other
-packages needed for the analysis (see version numbers and other
-technical details at the end of this document):
+After installation, the package can be loaded, together with the other packages needed for the analysis (see version numbers and other technical details at the end of this document): 
 
-``` r
+
+```{r}
 library(EGM)
 
 library(tidyverse)
-```
-
-    ## Warning: package 'tidyverse' was built under R version 4.0.4
-
-    ## -- Attaching packages --------------------------------------- tidyverse 1.3.0 --
-
-    ## v ggplot2 3.3.3     v purrr   0.3.4
-    ## v tibble  3.1.0     v dplyr   1.0.5
-    ## v tidyr   1.1.3     v stringr 1.4.0
-    ## v readr   1.4.0     v forcats 0.5.1
-
-    ## Warning: package 'ggplot2' was built under R version 4.0.4
-
-    ## Warning: package 'tibble' was built under R version 4.0.4
-
-    ## Warning: package 'readr' was built under R version 4.0.4
-
-    ## Warning: package 'purrr' was built under R version 4.0.4
-
-    ## Warning: package 'stringr' was built under R version 4.0.4
-
-    ## Warning: package 'forcats' was built under R version 4.0.4
-
-    ## -- Conflicts ------------------------------------------ tidyverse_conflicts() --
-    ## x dplyr::filter() masks stats::filter()
-    ## x dplyr::lag()    masks stats::lag()
-
-``` r
 library(knitr)
-```
-
-    ## Warning: package 'knitr' was built under R version 4.0.4
-
-``` r
 library(kableExtra)
-```
-
-    ## Warning: package 'kableExtra' was built under R version 4.0.4
-
-    ## 
-    ## Attaching package: 'kableExtra'
-
-    ## The following object is masked from 'package:dplyr':
-    ## 
-    ##     group_rows
-
-``` r
 library(ggrepel)
-```
-
-    ## Warning: package 'ggrepel' was built under R version 4.0.4
-
-``` r
 library(patchwork)
 ```
 
-    ## Warning: package 'patchwork' was built under R version 4.0.4
+```{r, eval=T, include=F, warning=F, message=F}
+# This private package contains the actual data used to reproduce the figures. 
+# This package is used to produce the results in this report, but is not publically available given privacy concerns
+library(rionegro)
+```
 
 ## Structure of the data
 
-The microdata data from Rio Negro cannot be shared in full given privacy
-concerns. The raw data includes sensitive information such as date of
-birth, date of death, and kinship ties, which could be used to uniquely
-identify members of the population. Nevertheless, this section provides
-a brief overview of the seven datasets referenced in the code below.
-Note that the datasets included in the EGM package are for illustrative
-purposes and only include the columns referenced in the analysis.
+The microdata data from Rio Negro cannot be shared in full given privacy concerns. The raw data includes sensitive information such as date of birth, date of death, and kinship ties, which could be used to uniquely identify members of the population. Nevertheless, this section provides a brief overview of the seven datasets referenced in the code below. Note that the datasets included in the EGM package are for illustrative purposes and only include the columns referenced in the analysis.
 
-The `final` dataset records all members of the community, reconstructed
-using the EGM method. It is the consolidated and deduplicated version of
-the `ind.q` dataset.
+The `final` dataset records all members of the community, reconstructed using the EGM method. It is the consolidated and deduplicated version of the `ind.q` dataset.
 
-``` r
+```{r}
 EGM::final %>% head %>% kable
 ```
 
-<table>
+The analysis below also uses data from secondary sources. This was used to check the quality of the demographic information collected using the EGM. The `individuals81` dataset records the 1978 census conducted by INDE power company in Rio Negro before the killings. (It is referred to as '81' because the census report was published in 1981.)
 
-<thead>
-
-<tr>
-
-<th style="text-align:right;">
-
-ind\_id
-
-</th>
-
-<th style="text-align:left;">
-
-id\_cuest
-
-</th>
-
-<th style="text-align:right;">
-
-DoD
-
-</th>
-
-<th style="text-align:right;">
-
-DoD\_with\_alive
-
-</th>
-
-<th style="text-align:right;">
-
-DoB
-
-</th>
-
-<th style="text-align:right;">
-
-alive
-
-</th>
-
-<th style="text-align:left;">
-
-died\_conflict
-
-</th>
-
-<th style="text-align:right;">
-
-sex
-
-</th>
-
-<th style="text-align:left;">
-
-sex2
-
-</th>
-
-<th style="text-align:left;">
-
-origin\_literal
-
-</th>
-
-<th style="text-align:left;">
-
-origin\_departamento
-
-</th>
-
-<th style="text-align:left;">
-
-origin\_local
-
-</th>
-
-<th style="text-align:left;">
-
-parents
-
-</th>
-
-<th style="text-align:right;">
-
-father
-
-</th>
-
-<th style="text-align:right;">
-
-mother
-
-</th>
-
-<th style="text-align:left;">
-
-spouses
-
-</th>
-
-<th style="text-align:left;">
-
-children
-
-</th>
-
-<th style="text-align:left;">
-
-cousins
-
-</th>
-
-<th style="text-align:left;">
-
-grandparents
-
-</th>
-
-<th style="text-align:left;">
-
-grandchildren
-
-</th>
-
-</tr>
-
-</thead>
-
-<tbody>
-
-<tr>
-
-<td style="text-align:right;">
-
-1
-
-</td>
-
-<td style="text-align:left;">
-
-1\_1;3\_24;33\_30
-
-</td>
-
-<td style="text-align:right;">
-
-NA
-
-</td>
-
-<td style="text-align:right;">
-
-2016
-
-</td>
-
-<td style="text-align:right;">
-
-1954
-
-</td>
-
-<td style="text-align:right;">
-
-1
-
-</td>
-
-<td style="text-align:left;">
-
-FALSE
-
-</td>
-
-<td style="text-align:right;">
-
-2
-
-</td>
-
-<td style="text-align:left;">
-
-Female
-
-</td>
-
-<td style="text-align:left;">
-
-1
-
-</td>
-
-<td style="text-align:left;">
-
-baja verapaz
-
-</td>
-
-<td style="text-align:left;">
-
-TRUE
-
-</td>
-
-<td style="text-align:left;">
-
-8;9
-
-</td>
-
-<td style="text-align:right;">
-
-8
-
-</td>
-
-<td style="text-align:right;">
-
-9
-
-</td>
-
-<td style="text-align:left;">
-
-2
-
-</td>
-
-<td style="text-align:left;">
-
-3;120;121
-
-</td>
-
-<td style="text-align:left;">
-
-NA
-
-</td>
-
-<td style="text-align:left;">
-
-NA
-
-</td>
-
-<td style="text-align:left;">
-
-4;60;122;3507;123
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:right;">
-
-2
-
-</td>
-
-<td style="text-align:left;">
-
-1\_2;3\_25;33\_36
-
-</td>
-
-<td style="text-align:right;">
-
-1984
-
-</td>
-
-<td style="text-align:right;">
-
-1984
-
-</td>
-
-<td style="text-align:right;">
-
-1939
-
-</td>
-
-<td style="text-align:right;">
-
-0
-
-</td>
-
-<td style="text-align:left;">
-
-FALSE
-
-</td>
-
-<td style="text-align:right;">
-
-1
-
-</td>
-
-<td style="text-align:left;">
-
-Male
-
-</td>
-
-<td style="text-align:left;">
-
-coban
-
-</td>
-
-<td style="text-align:left;">
-
-alta verapaz
-
-</td>
-
-<td style="text-align:left;">
-
-FALSE
-
-</td>
-
-<td style="text-align:left;">
-
-</td>
-
-<td style="text-align:right;">
-
-NA
-
-</td>
-
-<td style="text-align:right;">
-
-NA
-
-</td>
-
-<td style="text-align:left;">
-
-1
-
-</td>
-
-<td style="text-align:left;">
-
-3;120;121
-
-</td>
-
-<td style="text-align:left;">
-
-NA
-
-</td>
-
-<td style="text-align:left;">
-
-NA
-
-</td>
-
-<td style="text-align:left;">
-
-4;60;122;3507;123
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:right;">
-
-3
-
-</td>
-
-<td style="text-align:left;">
-
-1\_3;3\_26;33\_37;34\_49;25\_3
-
-</td>
-
-<td style="text-align:right;">
-
-NA
-
-</td>
-
-<td style="text-align:right;">
-
-2016
-
-</td>
-
-<td style="text-align:right;">
-
-1976
-
-</td>
-
-<td style="text-align:right;">
-
-1
-
-</td>
-
-<td style="text-align:left;">
-
-FALSE
-
-</td>
-
-<td style="text-align:right;">
-
-2
-
-</td>
-
-<td style="text-align:left;">
-
-Female
-
-</td>
-
-<td style="text-align:left;">
-
-1
-
-</td>
-
-<td style="text-align:left;">
-
-baja verapaz
-
-</td>
-
-<td style="text-align:left;">
-
-TRUE
-
-</td>
-
-<td style="text-align:left;">
-
-2;1
-
-</td>
-
-<td style="text-align:right;">
-
-2
-
-</td>
-
-<td style="text-align:right;">
-
-1
-
-</td>
-
-<td style="text-align:left;">
-
-5;7
-
-</td>
-
-<td style="text-align:left;">
-
-4;60;122;123
-
-</td>
-
-<td style="text-align:left;">
-
-24;3;50;25;51;3159;75;2199;468;79;85;2200;80;86;81;87;82;76;88;83;89;84;90
-
-</td>
-
-<td style="text-align:left;">
-
-8;9
-
-</td>
-
-<td style="text-align:left;">
-
-47
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:right;">
-
-4
-
-</td>
-
-<td style="text-align:left;">
-
-1\_4;33\_41;34\_55;3\_28
-
-</td>
-
-<td style="text-align:right;">
-
-NA
-
-</td>
-
-<td style="text-align:right;">
-
-2016
-
-</td>
-
-<td style="text-align:right;">
-
-1996
-
-</td>
-
-<td style="text-align:right;">
-
-1
-
-</td>
-
-<td style="text-align:left;">
-
-FALSE
-
-</td>
-
-<td style="text-align:right;">
-
-2
-
-</td>
-
-<td style="text-align:left;">
-
-Female
-
-</td>
-
-<td style="text-align:left;">
-
-2
-
-</td>
-
-<td style="text-align:left;">
-
-baja verapaz
-
-</td>
-
-<td style="text-align:left;">
-
-TRUE
-
-</td>
-
-<td style="text-align:left;">
-
-7;3
-
-</td>
-
-<td style="text-align:right;">
-
-7
-
-</td>
-
-<td style="text-align:right;">
-
-3
-
-</td>
-
-<td style="text-align:left;">
-
-6
-
-</td>
-
-<td style="text-align:left;">
-
-47
-
-</td>
-
-<td style="text-align:left;">
-
-4;3507;1538;1539;1540;1541
-
-</td>
-
-<td style="text-align:left;">
-
-484;1542;2;1
-
-</td>
-
-<td style="text-align:left;">
-
-NA
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:right;">
-
-5
-
-</td>
-
-<td style="text-align:left;">
-
-1\_5;3\_27;33\_44;34\_58
-
-</td>
-
-<td style="text-align:right;">
-
-NA
-
-</td>
-
-<td style="text-align:right;">
-
-2016
-
-</td>
-
-<td style="text-align:right;">
-
-1974
-
-</td>
-
-<td style="text-align:right;">
-
-1
-
-</td>
-
-<td style="text-align:left;">
-
-FALSE
-
-</td>
-
-<td style="text-align:right;">
-
-1
-
-</td>
-
-<td style="text-align:left;">
-
-Male
-
-</td>
-
-<td style="text-align:left;">
-
-canchun
-
-</td>
-
-<td style="text-align:left;">
-
-baja verapaz
-
-</td>
-
-<td style="text-align:left;">
-
-FALSE
-
-</td>
-
-<td style="text-align:left;">
-
-</td>
-
-<td style="text-align:right;">
-
-NA
-
-</td>
-
-<td style="text-align:right;">
-
-NA
-
-</td>
-
-<td style="text-align:left;">
-
-3
-
-</td>
-
-<td style="text-align:left;">
-
-60;122;123
-
-</td>
-
-<td style="text-align:left;">
-
-NA
-
-</td>
-
-<td style="text-align:left;">
-
-NA
-
-</td>
-
-<td style="text-align:left;">
-
-NA
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:right;">
-
-6
-
-</td>
-
-<td style="text-align:left;">
-
-1\_6;3\_29;33\_42;34\_56;44\_31
-
-</td>
-
-<td style="text-align:right;">
-
-NA
-
-</td>
-
-<td style="text-align:right;">
-
-2016
-
-</td>
-
-<td style="text-align:right;">
-
-1993
-
-</td>
-
-<td style="text-align:right;">
-
-1
-
-</td>
-
-<td style="text-align:left;">
-
-FALSE
-
-</td>
-
-<td style="text-align:right;">
-
-1
-
-</td>
-
-<td style="text-align:left;">
-
-Male
-
-</td>
-
-<td style="text-align:left;">
-
-2
-
-</td>
-
-<td style="text-align:left;">
-
-baja verapaz
-
-</td>
-
-<td style="text-align:left;">
-
-TRUE
-
-</td>
-
-<td style="text-align:left;">
-
-371;178
-
-</td>
-
-<td style="text-align:right;">
-
-371
-
-</td>
-
-<td style="text-align:right;">
-
-178
-
-</td>
-
-<td style="text-align:left;">
-
-4
-
-</td>
-
-<td style="text-align:left;">
-
-47
-
-</td>
-
-<td style="text-align:left;">
-
-2720;2712;2721;6;2714;419;420;2713;421;2715;422;2716;423;2717;2718;2719
-
-</td>
-
-<td style="text-align:left;">
-
-368;361;172;97
-
-</td>
-
-<td style="text-align:left;">
-
-NA
-
-</td>
-
-</tr>
-
-</tbody>
-
-</table>
-
-The analysis below also uses data from secondary sources. This was used
-to check the quality of the demographic information collected using the
-EGM. The `individuals81` dataset records the 1978 census conducted by
-INDE power company in Rio Negro before the killings. (It is referred to
-as ‘81’ because the census report was published in 1981.)
-
-``` r
+```{r}
 EGM::individuals81 %>% head %>% kable
 ```
 
-<table>
+The `individuals08` dataset records the 2008 local census conducted by COCAHICH in Rio Negro and Pacux.
 
-<thead>
-
-<tr>
-
-<th style="text-align:right;">
-
-ind\_id
-
-</th>
-
-<th style="text-align:right;">
-
-sex
-
-</th>
-
-<th style="text-align:right;">
-
-age81
-
-</th>
-
-</tr>
-
-</thead>
-
-<tbody>
-
-<tr>
-
-<td style="text-align:right;">
-
-6
-
-</td>
-
-<td style="text-align:right;">
-
-1
-
-</td>
-
-<td style="text-align:right;">
-
-39
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:right;">
-
-7
-
-</td>
-
-<td style="text-align:right;">
-
-2
-
-</td>
-
-<td style="text-align:right;">
-
-37
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:right;">
-
-9
-
-</td>
-
-<td style="text-align:right;">
-
-2
-
-</td>
-
-<td style="text-align:right;">
-
-16
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:right;">
-
-10
-
-</td>
-
-<td style="text-align:right;">
-
-1
-
-</td>
-
-<td style="text-align:right;">
-
-7
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:right;">
-
-11
-
-</td>
-
-<td style="text-align:right;">
-
-2
-
-</td>
-
-<td style="text-align:right;">
-
-4
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:right;">
-
-12
-
-</td>
-
-<td style="text-align:right;">
-
-1
-
-</td>
-
-<td style="text-align:right;">
-
-1
-
-</td>
-
-</tr>
-
-</tbody>
-
-</table>
-
-The `individuals08` dataset records the 2008 local census conducted by
-COCAHICH in Rio Negro and Pacux.
-
-``` r
+```{r}
 EGM::individuals08 %>% head %>% kable
 ```
 
-<table>
-
-<thead>
-
-<tr>
-
-<th style="text-align:right;">
-
-ind\_id
-
-</th>
-
-<th style="text-align:right;">
-
-sex
-
-</th>
-
-<th style="text-align:right;">
-
-age08
-
-</th>
-
-</tr>
-
-</thead>
-
-<tbody>
-
-<tr>
-
-<td style="text-align:right;">
-
-1
-
-</td>
-
-<td style="text-align:right;">
-
-1
-
-</td>
-
-<td style="text-align:right;">
-
-42.23014
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:right;">
-
-2
-
-</td>
-
-<td style="text-align:right;">
-
-2
-
-</td>
-
-<td style="text-align:right;">
-
-45.42740
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:right;">
-
-3
-
-</td>
-
-<td style="text-align:right;">
-
-1
-
-</td>
-
-<td style="text-align:right;">
-
-24.58630
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:right;">
-
-4
-
-</td>
-
-<td style="text-align:right;">
-
-1
-
-</td>
-
-<td style="text-align:right;">
-
-22.25753
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:right;">
-
-5
-
-</td>
-
-<td style="text-align:right;">
-
-2
-
-</td>
-
-<td style="text-align:right;">
-
-20.37260
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:right;">
-
-6
-
-</td>
-
-<td style="text-align:right;">
-
-2
-
-</td>
-
-<td style="text-align:right;">
-
-17.72877
-
-</td>
-
-</tr>
-
-</tbody>
-
-</table>
-
 # Reproducing results from the paper
 
-In what follows, I show how these datasets were analysed to produce the
-results reported in the paper. Note that the code will not work using
-only the sample datasets included in the EGM package. Researchers
-interested in replicating any particular section of the analysis are
-encouraged to contact the author.
+In what follows, I show how these datasets were analysed to produce the results reported in the paper. Note that the code will not work using only the sample datasets included in the EGM package. Researchers interested in replicating any particular section of the analysis are encouraged to contact the author. 
 
 ## Table 1
 
 ### Define parameters
 
-``` r
+```{r}
 war_year <- 1982
 
 death_year_min <- 1983
@@ -1386,13 +88,14 @@ cos_labs <- c(
 
 ### Define functions
 
-``` r
+```{r}
 format_zero_table <- function(x) gsub("^0\\.", ".", x)
 ```
 
 ### Run analysis
 
-``` r
+```{r}
+
  c_df <- 
     final %>%
     dplyr::filter(died_conflict & DoB <= birth_year_min) %>%
@@ -1405,11 +108,7 @@ format_zero_table <- function(x) gsub("^0\\.", ".", x)
     ) %>%
     group_by(ag_conflict, sex) %>%
     dplyr::summarise(n = n())
-```
-
-    ## `summarise()` has grouped output by 'ag_conflict'. You can override using the `.groups` argument.
-
-``` r
+  
 # For census data
   
   all_df <-
@@ -1424,11 +123,7 @@ format_zero_table <- function(x) gsub("^0\\.", ".", x)
     ) %>%
     group_by(ag_conflict, sex) %>%
     dplyr::summarise(n = n())
-```
-
-    ## `summarise()` has grouped output by 'ag_conflict'. You can override using the `.groups` argument.
-
-``` r
+  
   df <- merge(c_df, all_df, by = c("ag_conflict", "sex"))
   
   
@@ -1477,11 +172,7 @@ format_zero_table <- function(x) gsub("^0\\.", ".", x)
                   mutate_if(is.numeric, round, 2) %>%
                   data.frame
   )
-```
 
-    ## Warning in mask$eval_all_mutate(quo): NAs introduced by coercion
-
-``` r
   em_df <- 
   data.frame(cos_labs) %>% 
   bind_cols(df3) %>% 
@@ -1512,37 +203,15 @@ format_zero_table <- function(x) gsub("^0\\.", ".", x)
       , "Killed (total)" = 3
       , "Proportion killed" = 3
     ), line = F) 
+  
 ```
-
-    ## Warning in kable_styling(.): Please specify format in kable. kableExtra can
-    ## customize either HTML or LaTeX outputs. See https://haozhu233.github.io/
-    ## kableExtra/ for details.
-
-    ## Warning in add_header_above(., c("", "", `(A)` = 3, `(B)` = 3, `(C) = B/A` =
-    ## 3)): Please specify format in kable. kableExtra can customize either HTML or
-    ## LaTeX outputs. See https://haozhu233.github.io/kableExtra/ for details.
-
-    ## Warning in add_header_above(., c(Cohort = 1, `Age in 1982` = 1, `Alive in 1982`
-    ## = 3, : Please specify format in kable. kableExtra can customize either HTML or
-    ## LaTeX outputs. See https://haozhu233.github.io/kableExtra/ for details.
-
-|             |          | All | Female | Male | All | Female | Male | All | Female | Male |
-| ----------- | -------- | :-- | :----- | :--- | :-- | :----- | :--- | :-- | :----- | :--- |
-| 1968-1982   | 0 to 14  | 544 | 273    | 271  | 163 | 82     | 81   | .3  | .3     | .3   |
-| 1937-1967   | 15 to 44 | 332 | 170    | 162  | 147 | 75     | 72   | .44 | .44    | .44  |
-| Pre-1937    | 45+      | 94  | 43     | 51   | 56  | 22     | 34   | .59 | .51    | .67  |
-| All cohorts | All ages | 970 | 486    | 484  | 366 | 179    | 187  | .38 | .37    | .39  |
-
-Age-sex structure of the Rio Negro population before the 1982 killings
-and excess deaths from the killings. (A) Population by age and sex at
-the start of 1982; (B) direct deaths from the killings; (C) proportion
-of the pre-genocide population killed.
 
 ## Table 2
 
 ### Define parameters
 
-``` r
+```{r}
+
 br <- c(0, 15, 45, Inf)
 
 rel_old <- c(
@@ -1555,11 +224,12 @@ rel_new <- c(
   "Nuclear (any)", "Children", "Parents", "Siblings", "Spouses"
   , "Extended (any)", "Grandchildren", "Grandparents", "Cousins"
 ) 
+
 ```
 
 ### Define functions
 
-``` r
+```{r}
 create_age_groups <- function(df, col_in, br = c(0, 15, 45, Inf), include.lowest = T, col_out = "ag"){
   new <- cut(df[, col_in], br, include.lowest = include.lowest)
   df[, col_out] <- new
@@ -1569,7 +239,8 @@ create_age_groups <- function(df, col_in, br = c(0, 15, 45, Inf), include.lowest
 
 ### Run analysis
 
-``` r
+```{r}
+
 expo_all <- 
   census(final, 1983) %>% 
   create_age_groups(col_in = "age_at_census", br = br) %>% 
@@ -1595,11 +266,8 @@ expo <-
     pretty = paste0(hide0(round(value, 1)), " (", hide0(round(sd, 1)), ")")
     ) %>% 
   select(-sd)
-```
 
-    ## `summarise()` has grouped output by 'sex', 'ag'. You can override using the `.groups` argument.
 
-``` r
 expo %>% 
   mutate(
     name = plyr::mapvalues(name, rel_old, rel_new)
@@ -1615,28 +283,14 @@ expo %>%
     , label = "kin_loss_mean"
     , col.names = c(" ", "F 0-14", "F 15-44", "F 45+",  "M 0-14", "M 15-44", "M 45+")
   ) 
+
 ```
-
-|                | F 0-14    | F 15-44   | F 45+     | M 0-14    | M 15-44   | M 45+     |
-| :------------- | :-------- | :-------- | :-------- | :-------- | :-------- | :-------- |
-| Nuclear (any)  | 1.2 (1.7) | 2.9 (3.2) | 3.5 (3.1) | 1.4 (1.7) | 2.9 (2.8) | 3.2 (3.3) |
-| Children       | 0 (.1)    | .5 (1.2)  | 1.8 (1.6) | 0 (.1)    | .7 (1.3)  | 1.8 (2.1) |
-| Parents        | .8 (.7)   | .8 (.8)   | .6 (.8)   | .8 (.7)   | .9 (.7)   | .4 (.7)   |
-| Siblings       | .6 (1.3)  | 1.7 (2.5) | 1 (1.3)   | .8 (1.3)  | 1.4 (1.7) | .9 (2.1)  |
-| Spouses        | 0 (.1)    | .2 (.4)   | .5 (.5)   | 0 (0)     | .2 (.4)   | .3 (.5)   |
-| Extended (any) | 3.8 (5.4) | 4.9 (5.3) | 6.1 (5.4) | 4.5 (5.5) | 4.6 (5.1) | 5.8 (6.3) |
-| Grandchildren  | 0 (0)     | .3 (.8)   | 2.6 (3.8) | 0 (0)     | .2 (.8)   | 2.7 (3.7) |
-| Grandparents   | .7 (1)    | .3 (.7)   | 0 (0)     | .8 (1)    | .2 (.5)   | 0 (0)     |
-| Cousins        | 2 (3.9)   | 1.4 (3.5) | 0 (0)     | 2.3 (4)   | 1.3 (3.6) | 0 (0)     |
-
-Number of relatives lost by sex and age of genocide survivors at the
-time of the killings (mean and standard deviation).
 
 ## Table 3
 
 ### Define parameters
 
-``` r
+```{r}
 deaths_keep <- 1:5
 
 col_kin <- c(
@@ -1645,11 +299,13 @@ col_kin <- c(
   , "extended (any)"
   , "grandchildren","grandparents", "cousins"
     )
+
 ```
+
 
 ## Run analysis
 
-``` r
+```{r}
 pop_temp <- 
   census(final, 1982) %>%
   dplyr::filter(!died_conflict) %>%
@@ -1714,30 +370,15 @@ prog_df %>%
     , caption = "Proportion of genocide survivors who experienced the death of $n$ or more relatives ($n+$), conditional on having experienced the death of at least $(n-1)$ relatives. In square brackets, population who experienced at least $n$ deaths of a given relative type."
     , label = "bpr"
     ) 
+
 ```
-
-| (n-1) to n+    | 0 to 1+     | 1 to 2+     | 2 to 3+     | 3 to 4+     | 4 to 5+     |
-| :------------- | :---------- | :---------- | :---------- | :---------- | :---------- |
-| Nuclear (Any)  | .59 \[354\] | .68 \[239\] | .79 \[188\] | .63 \[119\] | .72 \[86\]  |
-| Children       | .11 \[68\]  | .6 \[41\]   | .49 \[20\]  | .35 \[7\]   | .71 \[5\]   |
-| Parents        | .42 \[250\] | .28 \[71\]  |             |             |             |
-| Siblings       | .38 \[228\] | .71 \[162\] | .67 \[108\] | .47 \[51\]  | .49 \[25\]  |
-| Spouses        | .07 \[44\]  |             |             |             |             |
-| Extended (Any) | .66 \[397\] | .86 \[342\] | .91 \[312\] | .83 \[259\] | .84 \[217\] |
-| Grandchildren  | .08 \[45\]  | .69 \[31\]  | .65 \[20\]  | .65 \[13\]  | .69 \[9\]   |
-| Grandparents   | .28 \[170\] | .62 \[105\] | .3 \[32\]   | .03 \[1\]   |             |
-| Cousins        | .29 \[173\] | .91 \[158\] | .78 \[124\] | .76 \[94\]  | .98 \[92\]  |
-
-Proportion of genocide survivors who experienced the death of \(n\) or
-more relatives (\(n+\)), conditional on having experienced the death of
-at least \((n-1)\) relatives. In square brackets, population who
-experienced at least \(n\) deaths of a given relative type.
 
 ## Figure 1
 
 ### Define parameters
 
-``` r
+```{r}
+
 # For data wrangling
 
 awareness_ages <- c(5, 12)
@@ -1754,11 +395,12 @@ lab_df <- data.frame(
   , value = c(14, 40)
   , type = c(l1, l2)
 )
+
 ```
 
 ### Define functions
 
-``` r
+```{r}
 # Given a type of relative and awareness age, determine the share
 # of witnesses in a populatio over time, or the share of pop with 
 # a victim from the genocide
@@ -1935,7 +577,8 @@ get_mean_age_witness <- function(everyone, year_range){
 
 ### Run analysis
 
-``` r
+```{r}
+
 both_survivors <- 
   get_witness_df(
   # Relative type to consider for estimating relatedness to victim
@@ -1944,11 +587,13 @@ both_survivors <-
   # remember
   , awareness_age = awareness_ages[2]
   ) 
+
 ```
 
 Faceted plot
 
-``` r
+```{r}
+
 # Share
 p_s <- 
   both_survivors %>% 
@@ -2028,15 +673,14 @@ p_a <-
 
 combined <- p_s + p_a & theme(legend.position = "bottom", legend.key.width = unit(2,"cm"))
 combined + plot_layout(guides = "collect")
-```
 
-![](README_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+```
 
 ## Figure 3
 
 ### Define parameters
 
-``` r
+```{r}
 war_year <- 1982
 
 age_br <- c(0, 15, 45, 100)
@@ -2047,11 +691,12 @@ nuc <- c("parents", "siblings", "children", "spouses")
 fam_levels <- c("nuclear family", "extended family")
 knew_br <- c("met_relative","all", "did_not_meet_relative")
 knew_levs <- c("Overlapped with a victim","Related to a victim", "No overlap")
+
 ```
 
 ### Define functions
 
-``` r
+```{r}
 get_df_share_bereaved_over_time <- function(condition = "all"){
   
   # General dfs
@@ -2188,11 +833,13 @@ get_pop_composition_relative_died <- function(everyone, year_range, col_name, co
     mutate(relative = col_name)
   out  
 }
+
+
 ```
 
 ### Run analysis
 
-``` r
+```{r}
 share_are_bereaved_met <- 
   get_df_share_bereaved_over_time(condition = knew_br[1])
 
@@ -2217,11 +864,13 @@ share_are_bereaved <- bind_rows(
     , knew = factor(knew, levels = rev(knew_levs))
     , type = factor(type, levels = fam_levels)
   ) 
+
 ```
 
 Plot
 
-``` r
+```{r}
+
 share_are_bereaved %>% 
   filter(year > 1982) %>% 
   filter(knew != knew_levs[3]) %>%
@@ -2251,13 +900,12 @@ share_are_bereaved %>%
   theme_bw(base_size = 16)
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
 
 ## Figure 4
 
 ### Define parameters
 
-``` r
+```{r}
 wit_br <- c("witness_met", "witness_not_met", "not_witness")
 wit_labs <- c("Yes, and overlapped", "Yes, but never overlapped", "No")
 
@@ -2273,7 +921,7 @@ filter_years <- c(1983, 2016)
 
 ### Define functions:
 
-``` r
+```{r}
 # Define function to get ggplot pyramid
 get_witness_pyramid <- function(filter_year, wit_br, wit_labs, min_age, max_age){
   
@@ -2426,11 +1074,13 @@ pyramid_coords <- function(row){
       , row.names = NULL, stringsAsFactors = F)
     
 }
+
 ```
 
 ### Run analysis
 
-``` r
+```{r}
+
 datapoly <- 
   get_witness_pyramid(filter_years[1], wit_br, wit_labs, min_age, max_age) %>% 
   bind_rows(
@@ -2470,52 +1120,14 @@ datapoly %>%
   theme(
     legend.position = "bottom"
   )
-```
 
-![](README_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
+```
 
 # Session information
 
-Report by Diego Alburez-Gutierrez -
-\[@d\_alburez\](<https://twitter.com/d_alburez>)
+Report by Diego Alburez-Gutierrez - [@d_alburez](https://twitter.com/d_alburez)
 
-    ## [1] "Report created: 2021-11-17 14:33:13"
-
-    ## R version 4.0.2 (2020-06-22)
-    ## Platform: x86_64-w64-mingw32/x64 (64-bit)
-    ## Running under: Windows 10 x64 (build 18363)
-    ## 
-    ## Matrix products: default
-    ## 
-    ## locale:
-    ## [1] LC_COLLATE=English_United Kingdom.1252 
-    ## [2] LC_CTYPE=English_United Kingdom.1252   
-    ## [3] LC_MONETARY=English_United Kingdom.1252
-    ## [4] LC_NUMERIC=C                           
-    ## [5] LC_TIME=English_United Kingdom.1252    
-    ## 
-    ## attached base packages:
-    ## [1] stats     graphics  grDevices utils     datasets  methods   base     
-    ## 
-    ## other attached packages:
-    ##  [1] rionegro_0.1.0   patchwork_1.1.1  ggrepel_0.9.1    kableExtra_1.3.4
-    ##  [5] knitr_1.31       forcats_0.5.1    stringr_1.4.0    dplyr_1.0.5     
-    ##  [9] purrr_0.3.4      readr_1.4.0      tidyr_1.1.3      tibble_3.1.0    
-    ## [13] ggplot2_3.3.3    tidyverse_1.3.0  EGM_0.1.0       
-    ## 
-    ## loaded via a namespace (and not attached):
-    ##  [1] Rcpp_1.0.6        svglite_2.0.0     lubridate_1.7.10  assertthat_0.2.1 
-    ##  [5] digest_0.6.27     utf8_1.2.1        plyr_1.8.6        R6_2.5.0         
-    ##  [9] cellranger_1.1.0  backports_1.2.1   reprex_1.0.0      evaluate_0.14    
-    ## [13] httr_1.4.2        highr_0.8         pillar_1.5.1      rlang_0.4.10     
-    ## [17] readxl_1.3.1      rstudioapi_0.13   rmarkdown_2.7     labeling_0.4.2   
-    ## [21] webshot_0.5.2     munsell_0.5.0     broom_0.7.5       compiler_4.0.2   
-    ## [25] modelr_0.1.8      xfun_0.21         pkgconfig_2.0.3   systemfonts_1.0.1
-    ## [29] htmltools_0.5.1.1 tidyselect_1.1.0  fansi_0.4.2       viridisLite_0.3.0
-    ## [33] crayon_1.4.1      dbplyr_2.1.0      withr_2.4.1       grid_4.0.2       
-    ## [37] jsonlite_1.7.2    gtable_0.3.0      lifecycle_1.0.0   DBI_1.1.1        
-    ## [41] magrittr_2.0.1    scales_1.1.1      cli_2.3.1         stringi_1.5.3    
-    ## [45] farver_2.1.0      fs_1.5.0          xml2_1.3.2        ellipsis_0.3.1   
-    ## [49] generics_0.1.0    vctrs_0.3.7       tools_4.0.2       glue_1.4.2       
-    ## [53] hms_1.0.0         yaml_2.2.1        colorspace_2.0-0  rvest_1.0.0      
-    ## [57] haven_2.3.1
+```{r, echo=FALSE, warning=FALSE}
+print(paste("Report created:", Sys.time()))
+sessionInfo()
+```
