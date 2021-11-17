@@ -31,12 +31,14 @@ The Demographic Drivers of Grief and Memory after Genocide in Guatemala
   - [Session information](#session-information)
 
 This document presents the code needed to reproduce the empirical
-analysis, figures, and tables presented in the paper [“The Demographic
-Drivers of Grief and Memory after Genocide in
-Guatemala”](https://dx.doi.org/10.4054/MPIDR-WP-2021-003) using the
-data collected in Rio Negro. The package `EGM` is needed to reproduce
-the results of this study. It can be downloaded from Github using the
-`devtools` package in R:
+analysis, figures, and tables presented in the paper:
+
+Alburez-Gutierrez, D. (accepted). *The demographic drivers of grief and
+memory after genocide in Guatemala.* Demography. Temporary
+[DOI:\[10.4054/MPIDR-WP-2021-003](DOI:%5B10.4054/MPIDR-WP-2021-003)\](<https://dx.doi.org/10.4054/MPIDR-WP-2021-003>).
+
+The package `EGM` is needed to reproduce the results of this study. It
+can be downloaded from Github using the `devtools` package in R:
 
 ``` r
   library(devtools)
@@ -2476,10 +2478,9 @@ datapoly %>%
 
 # Session information
 
-Report by Diego Alburez-Gutierrez -
-\[@d\_alburez\](<https://twitter.com/d_alburez>)
+Report by Diego Alburez-Gutierrez - <https://twitter.com/d_alburez>
 
-    ## [1] "Report created: 2021-11-17 14:33:13"
+    ## [1] "Report created: 2021-11-17 14:41:09"
 
     ## R version 4.0.2 (2020-06-22)
     ## Platform: x86_64-w64-mingw32/x64 (64-bit)

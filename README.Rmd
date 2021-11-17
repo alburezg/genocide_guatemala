@@ -10,7 +10,11 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-This document presents the code needed to reproduce the empirical analysis, figures, and tables presented in the paper ["The Demographic Drivers of Grief and Memory after Genocide in Guatemala"](https://dx.doi.org/10.4054/MPIDR-WP-2021-003) using the data collected in Rio Negro. The package `EGM` is needed to reproduce the results of this study. It can be downloaded from Github using the `devtools` package in R:
+This document presents the code needed to reproduce the empirical analysis, figures, and tables presented in the paper:
+
+Alburez-Gutierrez, D. (accepted). *The demographic drivers of grief and memory after genocide in Guatemala.* Demography. Temporary DOI:[10.4054/MPIDR-WP-2021-003](https://dx.doi.org/10.4054/MPIDR-WP-2021-003).
+
+The package `EGM` is needed to reproduce the results of this study. It can be downloaded from Github using the `devtools` package in R:
 
 ```{r, eval = FALSE}
   library(devtools)
@@ -1125,7 +1129,7 @@ datapoly %>%
 
 # Session information
 
-Report by Diego Alburez-Gutierrez - [@d_alburez](https://twitter.com/d_alburez)
+Report by Diego Alburez-Gutierrez - https://twitter.com/d_alburez
 
 ```{r, echo=FALSE, warning=FALSE}
 print(paste("Report created:", Sys.time()))
