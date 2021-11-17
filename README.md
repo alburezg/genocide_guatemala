@@ -122,11 +122,20 @@ Note that the datasets included in the EGM package are for illustrative
 purposes and only include the columns referenced in the analysis.
 
 The `final` dataset records all members of the community, reconstructed
-using the EGM method. It is the consolidated and deduplicated version of
-the `ind.q` dataset.
+using the EGM method (mock data for display purposes only). This is a
+dataset without duplicates in which individuals are rows. The `ind_id`
+column is a unique identifier which can be used to locate the relatives
+of a given individual (e.g., the person with `ind_id == 1` is the
+daughter of the person with `ind_id == 8`). The column `id_cuest`
+indicates in which questionnaires a given individual was reported (see
+discussion on ‘multiple genealogical reporting in the paper’). All other
+columns are self-explanatory (`DoB` and `DoD` are dates of birth and
+death; `alive` indicates whether a given person was alive when the data
+were collected in 2016; `origin_local` is used to identify individuals
+born in Rio Negro or Pacux).
 
 ``` r
-EGM::final %>% head %>% kable
+EGM::final %>% select(-DoD_with_alive) %>% head %>% kable
 ```
 
 <table>
@@ -150,12 +159,6 @@ id\_cuest
 <th style="text-align:right;">
 
 DoD
-
-</th>
-
-<th style="text-align:right;">
-
-DoD\_with\_alive
 
 </th>
 
@@ -283,12 +286,6 @@ NA
 
 <td style="text-align:right;">
 
-2016
-
-</td>
-
-<td style="text-align:right;">
-
 1954
 
 </td>
@@ -396,12 +393,6 @@ NA
 <td style="text-align:left;">
 
 1\_2;3\_25;33\_36
-
-</td>
-
-<td style="text-align:right;">
-
-1984
 
 </td>
 
@@ -529,12 +520,6 @@ NA
 
 <td style="text-align:right;">
 
-2016
-
-</td>
-
-<td style="text-align:right;">
-
 1976
 
 </td>
@@ -648,12 +633,6 @@ TRUE
 <td style="text-align:right;">
 
 NA
-
-</td>
-
-<td style="text-align:right;">
-
-2016
 
 </td>
 
@@ -777,12 +756,6 @@ NA
 
 <td style="text-align:right;">
 
-2016
-
-</td>
-
-<td style="text-align:right;">
-
 1974
 
 </td>
@@ -894,12 +867,6 @@ NA
 <td style="text-align:right;">
 
 NA
-
-</td>
-
-<td style="text-align:right;">
-
-2016
 
 </td>
 
@@ -2197,7 +2164,7 @@ datapoly %>%
 
 Report by Diego Alburez-Gutierrez - <https://twitter.com/d_alburez>
 
-    ## [1] "Report created: 2021-11-17 14:48:13"
+    ## [1] "Report created: 2021-11-17 14:59:40"
 
     ## R version 4.0.2 (2020-06-22)
     ## Platform: x86_64-w64-mingw32/x64 (64-bit)

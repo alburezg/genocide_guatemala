@@ -44,10 +44,10 @@ library(rionegro)
 
 The microdata data from Rio Negro cannot be shared in full given privacy concerns. The raw data includes sensitive information such as date of birth, date of death, and kinship ties, which could be used to uniquely identify members of the population. Nevertheless, this section provides a brief overview of the seven datasets referenced in the code below. Note that the datasets included in the EGM package are for illustrative purposes and only include the columns referenced in the analysis.
 
-The `final` dataset records all members of the community, reconstructed using the EGM method. It is the consolidated and deduplicated version of the `ind.q` dataset.
+The `final` dataset records all members of the community, reconstructed using the EGM method (mock data for display purposes only). This is a dataset without duplicates in which individuals are rows. The `ind_id` column is a unique identifier which can be used to locate the relatives of a given individual (e.g., the person with `ind_id == 1` is the daughter of the person with `ind_id == 8`). The column  `id_cuest` indicates in which questionnaires a given individual was reported (see discussion on 'multiple genealogical reporting in the paper'). All other columns are self-explanatory (`DoB` and `DoD` are dates of birth and death; `alive` indicates whether a given person was alive when the data were collected in 2016; `origin_local` is used to identify individuals born in Rio Negro or Pacux).
 
 ```{r}
-EGM::final %>% head %>% kable
+EGM::final %>% select(-DoD_with_alive) %>% head %>% kable
 ```
 
 # Reproducing results from the paper
