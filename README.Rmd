@@ -263,6 +263,7 @@ census <- function(df, from, to = NA, subset_df = T, born_in_RN = F, born_bv = F
       , "Proportion killed" = 3
     ), line = F) 
   
+write.csv(em_df, "Tab1.csv", row.names = F)
 ```
 
 ## Table 2
@@ -274,15 +275,24 @@ census <- function(df, from, to = NA, subset_df = T, born_in_RN = F, born_bv = F
 br <- c(0, 15, 45, Inf)
 
 rel_old <- c(
-  "nuclear", "children", "parents", "siblings", "spouses"
-  , "extended", "grandchildren", "grandparents", "cousins"
+  "children", "parents", "siblings", "spouses"
+  , "grandchildren", "grandparents", "cousins"
+  , "nuclear", "extended"
   )
 
 
 rel_new <- c(
-  "Nuclear (any)", "Children", "Parents", "Siblings", "Spouses"
-  , "Extended (any)", "Grandchildren", "Grandparents", "Cousins"
+  "Children", "Parents", "Siblings", "Spouses"
+  , "Grandchildren", "Grandparents", "Cousins"
+  , "Nuclear (any)", "Extended (Total)"
 ) 
+
+sex_ag_levs <- 
+  c("Female_[0,15]", "Female_(15,45]", "Female_(45,Inf]", "Female_Total"
+    , "Male_[0,15]", "Male_(15,45]", "Male_(45,Inf]", "Male_Total"
+    , "Total_Total"
+    )
+
 
 ```
 
@@ -313,6 +323,7 @@ expo_all <-
 # Fix error
 expo_all$value[expo_all$ag == "[0,15]" & expo_all$name == "grandchildren"] <- 0
 
+# SUmmary by age group
 expo <-
   expo_all %>% 
   group_by(sex, ag, name) %>% 
@@ -322,26 +333,67 @@ expo <-
     ) %>% 
   ungroup() %>% 
   mutate(
-    pretty = paste0(hide0(round(value, 1)), " (", hide0(round(sd, 1)), ")")
+      pretty = paste0(round(value, 1), " (", round(sd, 1), ")")
     ) %>% 
   select(-sd)
 
+# Summary for all ages
+expo_all_ag <-
+  expo_all %>% 
+  group_by(sex, name) %>% 
+  summarise(
+    sd = sd(value, na.rm = T)
+    , value = mean(value, na.rm = T)
+    ) %>% 
+  ungroup() %>% 
+  mutate(
+    # pretty = paste0(hide0(round(value, 1)), " (", hide0(round(sd, 1)), ")")
+        pretty = paste0(round(value, 1), " (", round(sd, 1), ")")
+    , ag = "Total"
+    ) %>% 
+  select(-sd)
 
-expo %>% 
+# Summary for all ages and sexes
+expo_all_ag_sex <-
+  expo_all %>% 
+  group_by(name) %>% 
+  summarise(
+    sd = sd(value, na.rm = T)
+    , value = mean(value, na.rm = T)
+    ) %>% 
+  ungroup() %>% 
+  mutate(
+    # pretty = paste0(hide0(round(value, 1)), " (", hide0(round(sd, 1)), ")")
+        pretty = paste0(round(value, 1), " (", round(sd, 1), ")")
+      , sex = "Total"
+    , ag = "Total"
+    ) %>% 
+  select(-sd)
+
+expo_df <- 
+  expo %>% 
+  bind_rows(expo_all_ag) %>% 
+  bind_rows(expo_all_ag_sex) %>% 
   mutate(
     name = plyr::mapvalues(name, rel_old, rel_new)
     , name = factor(name, levels = rel_new)
   ) %>% 
-  select(-value) %>% 
+  select(-value) %>%
   pivot_wider(names_from = c(sex, ag), values_from = pretty) %>% 
-  arrange(name) %>% 
+  arrange(name)  
+
+expo_df2 <- expo_df[ , c("name", sex_ag_levs)] 
+
+expo_df2 %>% 
   kable(
     format = "pipe"
       , booktabs = T
     , caption = "Number of relatives lost by sex and age of genocide survivors at the time of the killings (mean and standard deviation)."
     , label = "kin_loss_mean"
-    , col.names = c(" ", "F 0-14", "F 15-44", "F 45+",  "M 0-14", "M 15-44", "M 45+")
+    , col.names = c(" ", "F 0-14", "F 15-44", "F 45+", "F Tot",  "M 0-14", "M 15-44", "M 45+", "M Tot", "All_Total")
   ) 
+
+write.csv(expo_df2, "Tab2.csv", row.names = F)
 
 ```
 
@@ -405,8 +457,8 @@ prog_df <-
   ungroup() %>% 
   data.frame()
 
-
-prog_df %>% 
+prog_temp <- 
+  prog_df %>% 
   filter(deaths %in% deaths_keep) %>%
   select(kin, deaths, risk, prob = prog) %>% 
   mutate(
@@ -421,14 +473,16 @@ prog_df %>%
   arrange(kin) %>% 
   pivot_wider(-c(risk, prob), names_from = deaths, values_from = out, values_fill = list(out = "")) %>% 
   mutate(kin = str_to_title(kin)) %>% 
-  rename(`(n-1) to n+` = kin) %>% 
-  kable(
-    .
-    , format = "simple"
+  rename(`(n-1) to n+` = kin) 
+
+prog_temp %>% 
+  kable(format = "simple"
     , booktabs = T, escape = F
     , caption = "Proportion of genocide survivors who experienced the death of $n$ or more relatives ($n+$), conditional on having experienced the death of at least $(n-1)$ relatives. In square brackets, population who experienced at least $n$ deaths of a given relative type."
     , label = "bpr"
     ) 
+
+write.csv(prog_temp, "Tab3.csv", row.names = F)
 
 ```
 
@@ -446,8 +500,10 @@ awareness_ages <- c(5, 12)
 
 y_br_small <- c(1982, 1990, 2000, 2010, 2015)
 
-l1 <- "Genocide witnesses\n(proportion of population)"
-l2 <- "Mean age"
+min_br <- seq(1980, 2015, 5)
+
+l1 <- "Genocide Witnesses\n(proportion of population)"
+l2 <- "Mean Age"
 
 lab_df <- data.frame(
   year = c(1995, 2005)
@@ -649,7 +705,7 @@ both_survivors <-
 
 ```
 
-Faceted plot
+### Faceted plot
 
 ```{r}
 
@@ -667,7 +723,7 @@ p_s <-
     , value = ifelse(type == l1, value*100, value)
     , value = round(value/100, 2)
   ) %>% 
-  filter(year > 1982) %>% 
+    filter(between(year, 1983, 2015)) %>% 
   ggplot() +
   # Age
   geom_line(
@@ -676,17 +732,11 @@ p_s <-
     , size = 2
   ) +
   geom_vline(xintercept = 1982, linetype = "dashed") +
-  geom_text_repel(
-    aes(x = year, y = value, label = label)
-    , data = data.frame(year = 1982, value = 0.6, label = "Killings", type = l1)
-    , size = 6
-    , nudge_x = 13
-  ) +
   scale_y_continuous(l1) +
-  scale_x_continuous("Year", breaks = y_br_small) +
+  scale_x_continuous("Year", breaks = y_br_small, minor_breaks = min_br) +
   scale_color_manual("", values = c("black", "red"), guide=FALSE) + 
   scale_fill_manual("", values = c("black", "red"), guide=FALSE) + 
-  scale_linetype_manual("Experience of genocide", values = c(1:2), labels = c("Non-witness","Witness")) +
+    scale_linetype_manual("", values = c(1:2), labels = c("Witness", "Nonwitness")) +
   coord_cartesian(ylim = c(0.05, 0.65)) + 
   theme_bw(base_size = 18) 
 
@@ -699,8 +749,9 @@ p_a <-
       type,  "Share of population" = l1, "Mean Age" = l2
     )
     , value = ifelse(type == l1, value*100, value)
+    , status = factor(status, levels = c("w1", "w2", "other"))
   ) %>% 
-  filter(year > 1982) %>% 
+  filter(between(year, 1983, 2015)) %>% 
   ggplot() +
   # Age
   geom_line(
@@ -714,7 +765,7 @@ p_a <-
     , alpha = 0.3, show.legend = F
     , data = . %>% filter(status %in% c("w1"))
   ) +
-  # Non-Witness age bands
+  # Nonwitness age bands
   geom_ribbon(
     aes(x = year, y = value, ymin = age_low, ymax = age_high)
     , alpha = 0.3, show.legend = F
@@ -722,16 +773,84 @@ p_a <-
   ) +
   geom_vline(xintercept = 1982, linetype = "dashed") +
   scale_y_continuous(l2) +
-  scale_x_continuous("Year", breaks = y_br_small) +
+  scale_x_continuous("Year", breaks = y_br_small, minor_breaks = min_br) +
   scale_color_manual("", values = c("black", "red"), guide=FALSE) + 
   scale_fill_manual("", values = c("black", "red"), guide=FALSE) + 
-  scale_linetype_manual("Experience of genocide", values = c(2:1), labels = c("Non-witness","Witness")) +
+  # scale_linetype_manual("", values = c(2:1), labels = c("Nonwitness","Witness")) +
+  scale_linetype_manual("", values = c(1:2), labels = c("Witness", "Nonwitness")) +
   coord_cartesian(ylim = c(5, 65)) + 
   theme_bw(base_size = 18) +
-  guides(linetype = guide_legend(override.aes = list(size = 1)))
+  guides(linetype = guide_legend(override.aes = list(size = 1))) 
 
-combined <- p_s + p_a & theme(legend.position = "bottom", legend.key.width = unit(2,"cm"))
+combined <- 
+  p_s + p_a & theme(
+  legend.position = "bottom"
+  , legend.key.width = unit(2,"cm")
+  , axis.title.y = element_text(face="bold")    
+  , axis.title.x = element_text(face="bold")
+  )
+
 combined + plot_layout(guides = "collect")
+
+ggsave(paste0("Fig1.pdf"), width = 25, height = 12, units = "cm")
+
+```
+
+## Figure 2
+
+What does 'overlapped with victim' mean? 
+
+```{r}
+
+
+
+# rcode ldh129
+data <- 
+  data.frame(
+    y1 = 1:5
+    , y2 = 1:5
+    , x1 = c(1975, 1975, 1980, 2010, 1990)
+    , x2 = c(1982, 1982, 2000, 2019, 2019)
+    , shape_start = c("19","19","19", "19", "19")
+    , shape_end = c("4", "4", "4",NA, NA)
+    , colour = c("red", "red", "black", "black", "black")
+  ) 
+  
+data %>% 
+  ggplot()  +
+  geom_segment(aes(x = x1, y = y1, xend = x2, yend = y2, colour = colour), size = 1) +
+  # start points
+  geom_point(aes(x = x1, y = y1, shape = shape_start, colour = colour), size = 4) +
+  # end points
+  geom_point(aes(x = x2, y = y1, shape = shape_end, colour = colour), size = 4) + 
+  geom_vline(xintercept = 1982, linetype = "dashed") + 
+  scale_colour_manual(values = c("black", "red"), guide = F) +
+  scale_shape_manual(values = c(19, 4), guide = F) + 
+  # labels
+  geom_label_repel(
+    aes(x = x, y = y, label = label)
+    , nudge_x = 10
+    , nudge_y = 0.8
+    , segment.curvature = 0.1
+    , segment.ncp = 3
+    , segment.angle = 20
+    , arrow = arrow(length = unit(0.05, "npc"))
+    , data = data.frame(
+      x = c(1981)
+      , y = c(3.1)
+      , label = c("Overlapped with victim")
+    )
+  ) +
+  scale_y_continuous("Sibling ID", breaks = 1:5, labels = LETTERS[1:5], minor_breaks = 1:5) +
+  scale_x_continuous("Year", breaks = c(1982, 1990, 2000, 2010, 2015), minor_breaks = min_br) +
+  coord_cartesian(xlim = c(1980,2015), ylim = c(0.5, 5.5)) +
+  theme_bw() +
+  theme(
+   axis.title.y = element_text(face="bold")    
+  , axis.title.x = element_text(face="bold")
+  )
+
+ggsave("Fig2.pdf", width = 15, height = 5, units = "cm")
 
 ```
 
@@ -743,11 +862,10 @@ combined + plot_layout(guides = "collect")
 war_year <- 1982
 
 age_br <- c(0, 15, 45, 100)
-y_br_small <- c(1982, 1990, 2000, 2010, 2015)
-y_labs_small <- c(1982, "'90", 2000, "'10", "'15")
+y_br_small <- c(1980, 1990, 2000, 2010, 2015)
 
 nuc <- c("parents", "siblings", "children", "spouses")
-fam_levels <- c("nuclear family", "extended family")
+fam_levels <- c("Extended family", "Nuclear family")
 knew_br <- c("met_relative","all", "did_not_meet_relative")
 knew_levs <- c("Overlapped with a victim","Related to a victim", "No overlap")
 
@@ -914,7 +1032,7 @@ share_are_bereaved <- bind_rows(
   , share_are_bereaved_not_met %>% mutate(knew = knew_levs[3])
 ) %>% 
   mutate(
-    type = ifelse(relative %in% c(nuc, "nuclear"), "nuclear family", "extended family")
+    type = ifelse(relative %in% c(nuc, "nuclear"), "Nuclear family", "Extended family")
     , relative = recode(
       relative, 
       "nuclear"="nuclear (any)", "extended"="extended (any)"
@@ -926,12 +1044,12 @@ share_are_bereaved <- bind_rows(
 
 ```
 
-Plot
+### Plot
 
 ```{r}
 
 share_are_bereaved %>% 
-  filter(year > 1982) %>% 
+  filter(between(year, 1983, 2015)) %>% 
   filter(knew != knew_levs[3]) %>%
   ggplot() + 
   geom_line(
@@ -944,21 +1062,22 @@ share_are_bereaved %>%
     , show.legend = F
     , data = . %>% filter(year == 2000, knew == knew_levs[2])
   ) +
-  geom_text_repel(
-    aes(x = year, y = share, label = label)
-    , data = data.frame(
-      year = 1982, share = 0.65, label = "Killings"
-      , knew = knew_levs[1], type = fam_levels[1]
-      )
-    , nudge_x = 13
-  ) +
   geom_vline(xintercept = 1982, linetype = "dashed") +
-  scale_y_continuous("Proportion of population related to a victim") +
-  scale_x_continuous("Calendar year", breaks = y_br_small, labels = y_labs_small) +
+  scale_y_continuous("Proportion of Population") +
+  scale_x_continuous("Year", breaks = y_br_small, labels = y_br_small, minor_breaks = min_br) +
   facet_grid(factor(knew, levels = rev(knew_levs[-3])) ~ type, scales = "fixed") +
-  theme_bw(base_size = 16)
-```
+  coord_cartesian(xlim = c(1980, 2015)) +
+  theme_bw(base_size = 16) +
+  theme(
+   axis.title.y = element_text(face="bold")    
+  , axis.title.x = element_text(face="bold")
+  , axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)
+  , strip.text.x = element_text(face="bold")
+  , strip.text.y = element_text(face="bold")
+  )
 
+ggsave("Fig3.pdf", width = 18, height = 15, units = "cm")
+```
 
 ## Figure 4
 
@@ -966,7 +1085,7 @@ share_are_bereaved %>%
 
 ```{r}
 wit_br <- c("witness_met", "witness_not_met", "not_witness")
-wit_labs <- c("Yes, and overlapped", "Yes, but never overlapped", "No")
+wit_labs <- c("Related and overlapped", "Related but never overlapped", "Not related")
 
 min_age <- 0
 max_age <- 75
@@ -975,7 +1094,7 @@ br_y <- c(seq(0, max_age, 20), max_age)
 labs_y <- br_y
 labs_y[length(labs_y)] <- paste0(labs_y[length(labs_y)], "+")
 
-filter_years <- c(1983, 2016)
+filter_years <- c(1983, 2015)
 ```
 
 ### Define functions:
@@ -1003,7 +1122,7 @@ get_witness_pyramid <- function(filter_year, wit_br, wit_labs, min_age, max_age)
   # The trick is that these measure show all refer to the same
   # population, which is why filtering on population by date of
   # birth in here is unwise.
-  year_range <- 1982:2016
+  year_range <- 1982:2015
   
   baseline_pop <- 
     everyone %>% 
@@ -1153,8 +1272,11 @@ sex_df <-
     , label = c("Female", "Male")
   )
 
-# Plot
+```
 
+### Plot
+
+```{r}
 datapoly %>%
   mutate(y = y -1) %>% 
   ggplot(aes(x=x, y=y)) + 
@@ -1163,7 +1285,7 @@ datapoly %>%
     , colour = "black", size = 0.05
   ) +
   geom_label(aes(x = x, y = y, label = label), data = sex_df) +
-  scale_x_continuous("Population"
+  scale_x_continuous("Percentage of Population"
                      , breaks = scales::pretty_breaks(n = 6)
                      , labels = function(br) abs(br)
   ) +
@@ -1172,14 +1294,18 @@ datapoly %>%
                      , labels = labs_y
                      , sec.axis = dup_axis(name = "")
   ) +
-  scale_fill_discrete("Related to a victim?", breaks = wit_br, labels = wit_labs) +
+  scale_fill_discrete("", breaks = wit_br, labels = wit_labs) +
   facet_grid(~year) +
   coord_fixed() +
   theme_bw() +
-  theme(
-    legend.position = "bottom"
+    theme(
+   axis.title.y = element_text(face="bold")    
+  , axis.title.x = element_text(face="bold")
+  , strip.text.x = element_text(face="bold")
+  , legend.position = "bottom"
   )
 
+ggsave("Fig4.pdf", width = 15, height = 10, units = "cm")
 ```
 
 # Session information
