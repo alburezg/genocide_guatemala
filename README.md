@@ -20,14 +20,18 @@ Diego Alburez-Gutierrez
           - [Define parameters](#define-parameters-3)
           - [Define functions](#define-functions-2)
           - [Run analysis](#run-analysis-3)
+          - [Faceted plot](#faceted-plot)
+      - [Figure 2](#figure-2)
       - [Figure 3](#figure-3)
           - [Define parameters](#define-parameters-4)
           - [Define functions](#define-functions-3)
           - [Run analysis](#run-analysis-4)
+          - [Plot](#plot)
       - [Figure 4](#figure-4)
           - [Define parameters](#define-parameters-5)
           - [Define functions:](#define-functions-4)
           - [Run analysis](#run-analysis-5)
+          - [Plot](#plot-1)
   - [Session information](#session-information)
 
 This document presents the code needed to reproduce the empirical
@@ -1224,6 +1228,10 @@ and excess deaths from the killings. (A) Population by age and sex at
 the start of 1982; (B) direct deaths from the killings; (C) proportion
 of the pre-genocide population killed.
 
+``` r
+write.csv(em_df, "Tab1.csv", row.names = F)
+```
+
 ## Table 2
 
 ### Define parameters
@@ -1232,15 +1240,23 @@ of the pre-genocide population killed.
 br <- c(0, 15, 45, Inf)
 
 rel_old <- c(
-  "nuclear", "children", "parents", "siblings", "spouses"
-  , "extended", "grandchildren", "grandparents", "cousins"
+  "children", "parents", "siblings", "spouses"
+  , "grandchildren", "grandparents", "cousins"
+  , "nuclear", "extended"
   )
 
 
 rel_new <- c(
-  "Nuclear (any)", "Children", "Parents", "Siblings", "Spouses"
-  , "Extended (any)", "Grandchildren", "Grandparents", "Cousins"
+  "Children", "Parents", "Siblings", "Spouses"
+  , "Grandchildren", "Grandparents", "Cousins"
+  , "Nuclear (any)", "Extended (Total)"
 ) 
+
+sex_ag_levs <- 
+  c("Female_[0,15]", "Female_(15,45]", "Female_(45,Inf]", "Female_Total"
+    , "Male_[0,15]", "Male_(15,45]", "Male_(45,Inf]", "Male_Total"
+    , "Total_Total"
+    )
 ```
 
 ### Define functions
@@ -1269,6 +1285,7 @@ expo_all <-
 # Fix error
 expo_all$value[expo_all$ag == "[0,15]" & expo_all$name == "grandchildren"] <- 0
 
+# SUmmary by age group
 expo <-
   expo_all %>% 
   group_by(sex, ag, name) %>% 
@@ -1278,7 +1295,7 @@ expo <-
     ) %>% 
   ungroup() %>% 
   mutate(
-    pretty = paste0(hide0(round(value, 1)), " (", hide0(round(sd, 1)), ")")
+      pretty = paste0(round(value, 1), " (", round(sd, 1), ")")
     ) %>% 
   select(-sd)
 ```
@@ -1286,37 +1303,85 @@ expo <-
     ## `summarise()` has grouped output by 'sex', 'ag'. You can override using the `.groups` argument.
 
 ``` r
-expo %>% 
+# Summary for all ages
+expo_all_ag <-
+  expo_all %>% 
+  group_by(sex, name) %>% 
+  summarise(
+    sd = sd(value, na.rm = T)
+    , value = mean(value, na.rm = T)
+    ) %>% 
+  ungroup() %>% 
+  mutate(
+    # pretty = paste0(hide0(round(value, 1)), " (", hide0(round(sd, 1)), ")")
+        pretty = paste0(round(value, 1), " (", round(sd, 1), ")")
+    , ag = "Total"
+    ) %>% 
+  select(-sd)
+```
+
+    ## `summarise()` has grouped output by 'sex'. You can override using the `.groups` argument.
+
+``` r
+# Summary for all ages and sexes
+expo_all_ag_sex <-
+  expo_all %>% 
+  group_by(name) %>% 
+  summarise(
+    sd = sd(value, na.rm = T)
+    , value = mean(value, na.rm = T)
+    ) %>% 
+  ungroup() %>% 
+  mutate(
+    # pretty = paste0(hide0(round(value, 1)), " (", hide0(round(sd, 1)), ")")
+        pretty = paste0(round(value, 1), " (", round(sd, 1), ")")
+      , sex = "Total"
+    , ag = "Total"
+    ) %>% 
+  select(-sd)
+
+expo_df <- 
+  expo %>% 
+  bind_rows(expo_all_ag) %>% 
+  bind_rows(expo_all_ag_sex) %>% 
   mutate(
     name = plyr::mapvalues(name, rel_old, rel_new)
     , name = factor(name, levels = rel_new)
   ) %>% 
-  select(-value) %>% 
+  select(-value) %>%
   pivot_wider(names_from = c(sex, ag), values_from = pretty) %>% 
-  arrange(name) %>% 
+  arrange(name)  
+
+expo_df2 <- expo_df[ , c("name", sex_ag_levs)] 
+
+expo_df2 %>% 
   kable(
     format = "pipe"
       , booktabs = T
     , caption = "Number of relatives lost by sex and age of genocide survivors at the time of the killings (mean and standard deviation)."
     , label = "kin_loss_mean"
-    , col.names = c(" ", "F 0-14", "F 15-44", "F 45+",  "M 0-14", "M 15-44", "M 45+")
+    , col.names = c(" ", "F 0-14", "F 15-44", "F 45+", "F Tot",  "M 0-14", "M 15-44", "M 45+", "M Tot", "All_Total")
   ) 
 ```
 
-|                | F 0-14    | F 15-44   | F 45+     | M 0-14    | M 15-44   | M 45+     |
-| :------------- | :-------- | :-------- | :-------- | :-------- | :-------- | :-------- |
-| Nuclear (any)  | 1.2 (1.7) | 2.9 (3.2) | 3.5 (3.1) | 1.4 (1.7) | 2.9 (2.8) | 3.2 (3.3) |
-| Children       | 0 (.1)    | .5 (1.2)  | 1.8 (1.6) | 0 (.1)    | .7 (1.3)  | 1.8 (2.1) |
-| Parents        | .8 (.7)   | .8 (.8)   | .6 (.8)   | .8 (.7)   | .9 (.7)   | .4 (.7)   |
-| Siblings       | .6 (1.3)  | 1.7 (2.5) | 1 (1.3)   | .8 (1.3)  | 1.4 (1.7) | .9 (2.1)  |
-| Spouses        | 0 (.1)    | .2 (.4)   | .5 (.5)   | 0 (0)     | .2 (.4)   | .3 (.5)   |
-| Extended (any) | 3.8 (5.4) | 4.9 (5.3) | 6.1 (5.4) | 4.5 (5.5) | 4.6 (5.1) | 5.8 (6.3) |
-| Grandchildren  | 0 (0)     | .3 (.8)   | 2.6 (3.8) | 0 (0)     | .2 (.8)   | 2.7 (3.7) |
-| Grandparents   | .7 (1)    | .3 (.7)   | 0 (0)     | .8 (1)    | .2 (.5)   | 0 (0)     |
-| Cousins        | 2 (3.9)   | 1.4 (3.5) | 0 (0)     | 2.3 (4)   | 1.3 (3.6) | 0 (0)     |
+|                  | F 0-14    | F 15-44   | F 45+     | F Tot     | M 0-14    | M 15-44   | M 45+     | M Tot     | All\_Total |
+| :--------------- | :-------- | :-------- | :-------- | :-------- | :-------- | :-------- | :-------- | :-------- | :--------- |
+| Children         | 0 (0.1)   | 0.5 (1.2) | 1.8 (1.6) | 0.3 (0.9) | 0 (0.1)   | 0.7 (1.3) | 1.8 (2.1) | 0.3 (1)   | 0.3 (0.9)  |
+| Parents          | 0.8 (0.7) | 0.8 (0.8) | 0.6 (0.8) | 0.8 (0.7) | 0.8 (0.7) | 0.9 (0.7) | 0.4 (0.7) | 0.8 (0.7) | 0.8 (0.7)  |
+| Siblings         | 0.6 (1.3) | 1.7 (2.5) | 1 (1.3)   | 1 (1.8)   | 0.8 (1.3) | 1.4 (1.7) | 0.9 (2.1) | 1 (1.5)   | 1 (1.6)    |
+| Spouses          | 0 (0.1)   | 0.2 (0.4) | 0.5 (0.5) | 0.1 (0.3) | 0 (0)     | 0.2 (0.4) | 0.3 (0.5) | 0.1 (0.3) | 0.1 (0.3)  |
+| Grandchildren    | 0 (0)     | 0.3 (0.8) | 2.6 (3.8) | 0.3 (1.2) | 0 (0)     | 0.2 (0.8) | 2.7 (3.7) | 0.2 (1.1) | 0.2 (1.2)  |
+| Grandparents     | 0.7 (1)   | 0.3 (0.7) | 0 (0)     | 0.5 (0.9) | 0.8 (1)   | 0.2 (0.5) | 0 (0)     | 0.5 (0.9) | 0.5 (0.9)  |
+| Cousins          | 2 (3.9)   | 1.4 (3.5) | 0 (0)     | 1.7 (3.7) | 2.3 (4)   | 1.3 (3.6) | 0 (0)     | 1.9 (3.8) | 1.8 (3.8)  |
+| Nuclear (any)    | 1.2 (1.7) | 2.9 (3.2) | 3.5 (3.1) | 1.8 (2.5) | 1.4 (1.7) | 2.9 (2.8) | 3.2 (3.3) | 1.9 (2.3) | 1.9 (2.4)  |
+| Extended (Total) | 3.8 (5.4) | 4.9 (5.3) | 6.1 (5.4) | 4.3 (5.4) | 4.5 (5.5) | 4.6 (5.1) | 5.8 (6.3) | 4.6 (5.4) | 4.4 (5.4)  |
 
 Number of relatives lost by sex and age of genocide survivors at the
 time of the killings (mean and standard deviation).
+
+``` r
+write.csv(expo_df2, "Tab2.csv", row.names = F)
+```
 
 ## Table 3
 
@@ -1376,8 +1441,8 @@ prog_df <-
   ungroup() %>% 
   data.frame()
 
-
-prog_df %>% 
+prog_temp <- 
+  prog_df %>% 
   filter(deaths %in% deaths_keep) %>%
   select(kin, deaths, risk, prob = prog) %>% 
   mutate(
@@ -1392,10 +1457,10 @@ prog_df %>%
   arrange(kin) %>% 
   pivot_wider(-c(risk, prob), names_from = deaths, values_from = out, values_fill = list(out = "")) %>% 
   mutate(kin = str_to_title(kin)) %>% 
-  rename(`(n-1) to n+` = kin) %>% 
-  kable(
-    .
-    , format = "simple"
+  rename(`(n-1) to n+` = kin) 
+
+prog_temp %>% 
+  kable(format = "simple"
     , booktabs = T, escape = F
     , caption = "Proportion of genocide survivors who experienced the death of $n$ or more relatives ($n+$), conditional on having experienced the death of at least $(n-1)$ relatives. In square brackets, population who experienced at least $n$ deaths of a given relative type."
     , label = "bpr"
@@ -1419,6 +1484,10 @@ more relatives (\(n+\)), conditional on having experienced the death of
 at least \((n-1)\) relatives. In square brackets, population who
 experienced at least \(n\) deaths of a given relative type.
 
+``` r
+write.csv(prog_temp, "Tab3.csv", row.names = F)
+```
+
 ## Figure 1
 
 ### Define parameters
@@ -1432,8 +1501,10 @@ awareness_ages <- c(5, 12)
 
 y_br_small <- c(1982, 1990, 2000, 2010, 2015)
 
-l1 <- "Genocide witnesses\n(proportion of population)"
-l2 <- "Mean age"
+min_br <- seq(1980, 2015, 5)
+
+l1 <- "Genocide Witnesses\n(proportion of population)"
+l2 <- "Mean Age"
 
 lab_df <- data.frame(
   year = c(1995, 2005)
@@ -1632,7 +1703,7 @@ both_survivors <-
   ) 
 ```
 
-Faceted plot
+### Faceted plot
 
 ``` r
 # Share
@@ -1649,7 +1720,7 @@ p_s <-
     , value = ifelse(type == l1, value*100, value)
     , value = round(value/100, 2)
   ) %>% 
-  filter(year > 1982) %>% 
+    filter(between(year, 1983, 2015)) %>% 
   ggplot() +
   # Age
   geom_line(
@@ -1658,17 +1729,11 @@ p_s <-
     , size = 2
   ) +
   geom_vline(xintercept = 1982, linetype = "dashed") +
-  geom_text_repel(
-    aes(x = year, y = value, label = label)
-    , data = data.frame(year = 1982, value = 0.6, label = "Killings", type = l1)
-    , size = 6
-    , nudge_x = 13
-  ) +
   scale_y_continuous(l1) +
-  scale_x_continuous("Year", breaks = y_br_small) +
+  scale_x_continuous("Year", breaks = y_br_small, minor_breaks = min_br) +
   scale_color_manual("", values = c("black", "red"), guide=FALSE) + 
   scale_fill_manual("", values = c("black", "red"), guide=FALSE) + 
-  scale_linetype_manual("Experience of genocide", values = c(1:2), labels = c("Non-witness","Witness")) +
+    scale_linetype_manual("", values = c(1:2), labels = c("Witness", "Nonwitness")) +
   coord_cartesian(ylim = c(0.05, 0.65)) + 
   theme_bw(base_size = 18) 
 
@@ -1681,8 +1746,9 @@ p_a <-
       type,  "Share of population" = l1, "Mean Age" = l2
     )
     , value = ifelse(type == l1, value*100, value)
+    , status = factor(status, levels = c("w1", "w2", "other"))
   ) %>% 
-  filter(year > 1982) %>% 
+  filter(between(year, 1983, 2015)) %>% 
   ggplot() +
   # Age
   geom_line(
@@ -1696,7 +1762,7 @@ p_a <-
     , alpha = 0.3, show.legend = F
     , data = . %>% filter(status %in% c("w1"))
   ) +
-  # Non-Witness age bands
+  # Nonwitness age bands
   geom_ribbon(
     aes(x = year, y = value, ymin = age_low, ymax = age_high)
     , alpha = 0.3, show.legend = F
@@ -1704,19 +1770,93 @@ p_a <-
   ) +
   geom_vline(xintercept = 1982, linetype = "dashed") +
   scale_y_continuous(l2) +
-  scale_x_continuous("Year", breaks = y_br_small) +
+  scale_x_continuous("Year", breaks = y_br_small, minor_breaks = min_br) +
   scale_color_manual("", values = c("black", "red"), guide=FALSE) + 
   scale_fill_manual("", values = c("black", "red"), guide=FALSE) + 
-  scale_linetype_manual("Experience of genocide", values = c(2:1), labels = c("Non-witness","Witness")) +
+  # scale_linetype_manual("", values = c(2:1), labels = c("Nonwitness","Witness")) +
+  scale_linetype_manual("", values = c(1:2), labels = c("Witness", "Nonwitness")) +
   coord_cartesian(ylim = c(5, 65)) + 
   theme_bw(base_size = 18) +
-  guides(linetype = guide_legend(override.aes = list(size = 1)))
+  guides(linetype = guide_legend(override.aes = list(size = 1))) 
 
-combined <- p_s + p_a & theme(legend.position = "bottom", legend.key.width = unit(2,"cm"))
+combined <- 
+  p_s + p_a & theme(
+  legend.position = "bottom"
+  , legend.key.width = unit(2,"cm")
+  , axis.title.y = element_text(face="bold")    
+  , axis.title.x = element_text(face="bold")
+  )
+
 combined + plot_layout(guides = "collect")
 ```
 
 ![](README_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+
+``` r
+ggsave(paste0("Fig1.pdf"), width = 25, height = 12, units = "cm")
+```
+
+## Figure 2
+
+What does ‘overlapped with victim’ mean?
+
+``` r
+# rcode ldh129
+data <- 
+  data.frame(
+    y1 = 1:5
+    , y2 = 1:5
+    , x1 = c(1975, 1975, 1980, 2010, 1990)
+    , x2 = c(1982, 1982, 2000, 2019, 2019)
+    , shape_start = c("19","19","19", "19", "19")
+    , shape_end = c("4", "4", "4",NA, NA)
+    , colour = c("red", "red", "black", "black", "black")
+  ) 
+  
+data %>% 
+  ggplot()  +
+  geom_segment(aes(x = x1, y = y1, xend = x2, yend = y2, colour = colour), size = 1) +
+  # start points
+  geom_point(aes(x = x1, y = y1, shape = shape_start, colour = colour), size = 4) +
+  # end points
+  geom_point(aes(x = x2, y = y1, shape = shape_end, colour = colour), size = 4) + 
+  geom_vline(xintercept = 1982, linetype = "dashed") + 
+  scale_colour_manual(values = c("black", "red"), guide = F) +
+  scale_shape_manual(values = c(19, 4), guide = F) + 
+  # labels
+  geom_label_repel(
+    aes(x = x, y = y, label = label)
+    , nudge_x = 10
+    , nudge_y = 0.8
+    , segment.curvature = 0.1
+    , segment.ncp = 3
+    , segment.angle = 20
+    , arrow = arrow(length = unit(0.05, "npc"))
+    , data = data.frame(
+      x = c(1981)
+      , y = c(3.1)
+      , label = c("Overlapped with victim")
+    )
+  ) +
+  scale_y_continuous("Sibling ID", breaks = 1:5, labels = LETTERS[1:5], minor_breaks = 1:5) +
+  scale_x_continuous("Year", breaks = c(1982, 1990, 2000, 2010, 2015), minor_breaks = min_br) +
+  coord_cartesian(xlim = c(1980,2015), ylim = c(0.5, 5.5)) +
+  theme_bw() +
+  theme(
+   axis.title.y = element_text(face="bold")    
+  , axis.title.x = element_text(face="bold")
+  )
+```
+
+    ## Warning: Removed 2 rows containing missing values (geom_point).
+
+![](README_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
+
+``` r
+ggsave("Fig2.pdf", width = 15, height = 5, units = "cm")
+```
+
+    ## Warning: Removed 2 rows containing missing values (geom_point).
 
 ## Figure 3
 
@@ -1726,11 +1866,10 @@ combined + plot_layout(guides = "collect")
 war_year <- 1982
 
 age_br <- c(0, 15, 45, 100)
-y_br_small <- c(1982, 1990, 2000, 2010, 2015)
-y_labs_small <- c(1982, "'90", 2000, "'10", "'15")
+y_br_small <- c(1980, 1990, 2000, 2010, 2015)
 
 nuc <- c("parents", "siblings", "children", "spouses")
-fam_levels <- c("nuclear family", "extended family")
+fam_levels <- c("Extended family", "Nuclear family")
 knew_br <- c("met_relative","all", "did_not_meet_relative")
 knew_levs <- c("Overlapped with a victim","Related to a victim", "No overlap")
 ```
@@ -1894,7 +2033,7 @@ share_are_bereaved <- bind_rows(
   , share_are_bereaved_not_met %>% mutate(knew = knew_levs[3])
 ) %>% 
   mutate(
-    type = ifelse(relative %in% c(nuc, "nuclear"), "nuclear family", "extended family")
+    type = ifelse(relative %in% c(nuc, "nuclear"), "Nuclear family", "Extended family")
     , relative = recode(
       relative, 
       "nuclear"="nuclear (any)", "extended"="extended (any)"
@@ -1905,11 +2044,11 @@ share_are_bereaved <- bind_rows(
   ) 
 ```
 
-Plot
+### Plot
 
 ``` r
 share_are_bereaved %>% 
-  filter(year > 1982) %>% 
+  filter(between(year, 1983, 2015)) %>% 
   filter(knew != knew_levs[3]) %>%
   ggplot() + 
   geom_line(
@@ -1922,22 +2061,26 @@ share_are_bereaved %>%
     , show.legend = F
     , data = . %>% filter(year == 2000, knew == knew_levs[2])
   ) +
-  geom_text_repel(
-    aes(x = year, y = share, label = label)
-    , data = data.frame(
-      year = 1982, share = 0.65, label = "Killings"
-      , knew = knew_levs[1], type = fam_levels[1]
-      )
-    , nudge_x = 13
-  ) +
   geom_vline(xintercept = 1982, linetype = "dashed") +
-  scale_y_continuous("Proportion of population related to a victim") +
-  scale_x_continuous("Calendar year", breaks = y_br_small, labels = y_labs_small) +
+  scale_y_continuous("Proportion of Population") +
+  scale_x_continuous("Year", breaks = y_br_small, labels = y_br_small, minor_breaks = min_br) +
   facet_grid(factor(knew, levels = rev(knew_levs[-3])) ~ type, scales = "fixed") +
-  theme_bw(base_size = 16)
+  coord_cartesian(xlim = c(1980, 2015)) +
+  theme_bw(base_size = 16) +
+  theme(
+   axis.title.y = element_text(face="bold")    
+  , axis.title.x = element_text(face="bold")
+  , axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)
+  , strip.text.x = element_text(face="bold")
+  , strip.text.y = element_text(face="bold")
+  )
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+
+``` r
+ggsave("Fig3.pdf", width = 18, height = 15, units = "cm")
+```
 
 ## Figure 4
 
@@ -1945,7 +2088,7 @@ share_are_bereaved %>%
 
 ``` r
 wit_br <- c("witness_met", "witness_not_met", "not_witness")
-wit_labs <- c("Yes, and overlapped", "Yes, but never overlapped", "No")
+wit_labs <- c("Related and overlapped", "Related but never overlapped", "Not related")
 
 min_age <- 0
 max_age <- 75
@@ -1954,7 +2097,7 @@ br_y <- c(seq(0, max_age, 20), max_age)
 labs_y <- br_y
 labs_y[length(labs_y)] <- paste0(labs_y[length(labs_y)], "+")
 
-filter_years <- c(1983, 2016)
+filter_years <- c(1983, 2015)
 ```
 
 ### Define functions:
@@ -1982,7 +2125,7 @@ get_witness_pyramid <- function(filter_year, wit_br, wit_labs, min_age, max_age)
   # The trick is that these measure show all refer to the same
   # population, which is why filtering on population by date of
   # birth in here is unwise.
-  year_range <- 1982:2016
+  year_range <- 1982:2015
   
   baseline_pop <- 
     everyone %>% 
@@ -2129,9 +2272,11 @@ sex_df <-
     , y = max(datapoly$y - 5)
     , label = c("Female", "Male")
   )
+```
 
-# Plot
+### Plot
 
+``` r
 datapoly %>%
   mutate(y = y -1) %>% 
   ggplot(aes(x=x, y=y)) + 
@@ -2140,7 +2285,7 @@ datapoly %>%
     , colour = "black", size = 0.05
   ) +
   geom_label(aes(x = x, y = y, label = label), data = sex_df) +
-  scale_x_continuous("Population"
+  scale_x_continuous("Percentage of Population"
                      , breaks = scales::pretty_breaks(n = 6)
                      , labels = function(br) abs(br)
   ) +
@@ -2149,26 +2294,33 @@ datapoly %>%
                      , labels = labs_y
                      , sec.axis = dup_axis(name = "")
   ) +
-  scale_fill_discrete("Related to a victim?", breaks = wit_br, labels = wit_labs) +
+  scale_fill_discrete("", breaks = wit_br, labels = wit_labs) +
   facet_grid(~year) +
   coord_fixed() +
   theme_bw() +
-  theme(
-    legend.position = "bottom"
+    theme(
+   axis.title.y = element_text(face="bold")    
+  , axis.title.x = element_text(face="bold")
+  , strip.text.x = element_text(face="bold")
+  , legend.position = "bottom"
   )
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
+
+``` r
+ggsave("Fig4.pdf", width = 15, height = 10, units = "cm")
+```
 
 # Session information
 
 Report by Diego Alburez-Gutierrez - <https://twitter.com/d_alburez>
 
-    ## [1] "Report created: 2021-11-17 14:59:40"
+    ## [1] "Report created: 2022-04-12 19:11:04"
 
     ## R version 4.0.2 (2020-06-22)
     ## Platform: x86_64-w64-mingw32/x64 (64-bit)
-    ## Running under: Windows 10 x64 (build 18363)
+    ## Running under: Windows 10 x64 (build 19044)
     ## 
     ## Matrix products: default
     ## 
@@ -2189,8 +2341,8 @@ Report by Diego Alburez-Gutierrez - <https://twitter.com/d_alburez>
     ## [13] ggplot2_3.3.3    tidyverse_1.3.0  EGM_0.1.0       
     ## 
     ## loaded via a namespace (and not attached):
-    ##  [1] Rcpp_1.0.6        svglite_2.0.0     lubridate_1.7.10  assertthat_0.2.1 
-    ##  [5] digest_0.6.27     utf8_1.2.1        plyr_1.8.6        R6_2.5.0         
+    ##  [1] Rcpp_1.0.7        svglite_2.0.0     lubridate_1.7.10  assertthat_0.2.1 
+    ##  [5] digest_0.6.28     utf8_1.2.1        plyr_1.8.6        R6_2.5.0         
     ##  [9] cellranger_1.1.0  backports_1.2.1   reprex_1.0.0      evaluate_0.14    
     ## [13] httr_1.4.2        highr_0.8         pillar_1.5.1      rlang_0.4.10     
     ## [17] readxl_1.3.1      rstudioapi_0.13   rmarkdown_2.7     labeling_0.4.2   
