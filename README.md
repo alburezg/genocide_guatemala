@@ -2285,7 +2285,7 @@ datapoly %>%
     , colour = "black", size = 0.05
   ) +
   geom_label(aes(x = x, y = y, label = label), data = sex_df) +
-  scale_x_continuous("Percentage of Population"
+  scale_x_continuous("Population"
                      , breaks = scales::pretty_breaks(n = 6)
                      , labels = function(br) abs(br)
   ) +
@@ -2316,7 +2316,7 @@ ggsave("Fig4.pdf", width = 15, height = 10, units = "cm")
 
 Report by Diego Alburez-Gutierrez - <https://twitter.com/d_alburez>
 
-    ## [1] "Report created: 2022-04-12 19:11:04"
+    ## [1] "Report created: 2022-05-02 10:48:44"
 
     ## R version 4.0.2 (2020-06-22)
     ## Platform: x86_64-w64-mingw32/x64 (64-bit)

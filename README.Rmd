@@ -1285,7 +1285,7 @@ datapoly %>%
     , colour = "black", size = 0.05
   ) +
   geom_label(aes(x = x, y = y, label = label), data = sex_df) +
-  scale_x_continuous("Percentage of Population"
+  scale_x_continuous("Population"
                      , breaks = scales::pretty_breaks(n = 6)
                      , labels = function(br) abs(br)
   ) +
